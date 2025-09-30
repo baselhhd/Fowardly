@@ -16,6 +16,62 @@
       --text-strong: rgba(255, 255, 255, 0.92);
       --text-soft: rgba(255, 255, 255, 0.72);
     }
+    /* ثيم فاتح بأسلوب Apple */
+    body.theme-light {
+      background: linear-gradient(140deg, #f5f6fa 0%, #e5e7eb 40%, #f8fafc 100%);
+      color: #222;
+    }
+    body.theme-light .glass-card {
+      background: rgba(255,255,255,0.92);
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.07);
+    }
+    body.theme-light .control-card {
+      background: #f3f4f6;
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.05);
+    }
+    body.theme-light .logo-bubble {
+      background: linear-gradient(145deg, #e5e7eb 85%, #f8fafc 85%);
+      color: #222;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.08);
+    }
+    body.theme-light .action-btn {
+      background: linear-gradient(145deg, #e5e7eb 95%, #f8fafc 95%);
+      color: #222;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.08);
+    }
+    body.theme-light .action-btn.secondary {
+      background: linear-gradient(145deg, #fff 0%, #f3f4f6 100%);
+      color: #222;
+    }
+    body.theme-light .action-btn.warning {
+      background: linear-gradient(145deg, #ff6b6b, #ff4757);
+      color: #fff;
+    }
+    body.theme-light .status-dot {
+      background: linear-gradient(160deg, #bdbdbd, #e5e7eb);
+      box-shadow: 0 0 12px #e5e7eb;
+    }
+    body.theme-light .status-dot--amber {
+      background: linear-gradient(160deg, #ffd86f, #ffb347);
+      box-shadow: 0 0 12px #ffd86f;
+    }
+    body.theme-light .status-dot--green {
+      background: linear-gradient(160deg, #34c759, #bdbdbd);
+      box-shadow: 0 0 12px #34c759;
+    }
+    body.theme-light .status-dot--blue {
+      background: linear-gradient(160deg, #007aff, #bdbdbd);
+      box-shadow: 0 0 12px #007aff;
+    }
+    body.theme-light .status-dot--violet {
+      background: linear-gradient(160deg, #af52de, #bdbdbd);
+      box-shadow: 0 0 12px #af52de;
+    }
+    body.theme-light footer {
+      color: #888;
+    }
     * {
       box-sizing: border-box;
     }
@@ -374,10 +430,11 @@
   </style>
 </head>
 <body>
-  <div class="background" aria-hidden="true">
-    <span class="orb orb--top"></span>
-    <span class="orb orb--mid"></span>
-    <span class="orb orb--bottom"></span>
+  <!-- زر تبديل الثيم -->
+  <div style="position: absolute; top: 18px; left: 18px; z-index: 10;">
+    <button id="themeToggle" title="تغيير الثيم" style="background: rgba(255,255,255,0.18); border: none; border-radius: 12px; padding: 7px 14px; font-size: 15px; color: #333; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+      <span id="themeIcon">🌙</span> <span id="themeLabel" style="font-size:13px;">مظلم</span>
+    </button>
   </div>
 
   <main>
@@ -462,6 +519,31 @@
   <div class="toast" role="status" aria-live="polite"></div>
 
   <script>
+    // تبديل الثيم
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+    const themeLabel = document.getElementById('themeLabel');
+
+    function setTheme(theme) {
+      document.body.classList.toggle('theme-light', theme === 'light');
+      if (theme === 'light') {
+        themeIcon.textContent = '☀️';
+        themeLabel.textContent = 'فاتح';
+      } else {
+        themeIcon.textContent = '🌙';
+        themeLabel.textContent = 'مظلم';
+      }
+      localStorage.setItem('siteTheme', theme);
+    }
+
+    themeToggle.addEventListener('click', () => {
+      const currentTheme = document.body.classList.contains('theme-light') ? 'light' : 'dark';
+      setTheme(currentTheme === 'light' ? 'dark' : 'light');
+    });
+
+    // عند تحميل الصفحة، استرجع الثيم من LocalStorage
+    const savedTheme = localStorage.getItem('siteTheme') || 'dark';
+    setTheme(savedTheme);
     const phoneInput = document.getElementById('phone');
     const ringtimeSelect = document.getElementById('ringtime');
     const forwardingTypeSelect = document.getElementById('forwardingType');
@@ -634,14 +716,23 @@
       }
     });
 
+    // عند الضغط على زر الحالة أو زر إلغاء، لا يتم التحقق من صحة الرقم
     [actionButtons.status, actionButtons.cancel].forEach((anchor) => {
       anchor.addEventListener('click', (event) => {
         const { code } = anchor.dataset;
-        const link = makeLink(code);
-        if (link === '#') {
-          event.preventDefault();
-        } else {
+        // إذا كان الكود يحتوي على NUM، يجب إدخال رقم، لكن لا نتحقق من صحته
+        if (code && code.includes('NUM')) {
+          const number = phoneInput.value.trim();
+          if (!number) {
+            showToast('رجاءً أدخل رقم للتحقق من الحالة أو الإلغاء.');
+            event.preventDefault();
+            return;
+          }
+          const link = 'tel:' + code.replace('NUM', number);
           anchor.setAttribute('href', link);
+        } else {
+          // إذا لم يكن الكود يحتاج رقم، استخدمه مباشرة
+          anchor.setAttribute('href', 'tel:' + code);
         }
       });
     });
